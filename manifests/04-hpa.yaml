@@ -1,0 +1,23 @@
+# HorizontalPodAutoscaler: ajusta automáticamente la cantidad de
+# réplicas según el uso de CPU. Si la carga sube, Kubernetes crea
+# más pods solo; si baja, los elimina. Requiere metrics-server
+# habilitado en el cluster (ver README).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-app-hpa
+  namespace: demo-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: demo-app
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
