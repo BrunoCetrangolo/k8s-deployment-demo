@@ -1,0 +1,12 @@
+# ConfigMap: guarda configuración de la app separada de la imagen.
+# Así, si mañana hay que cambiar una variable (por ejemplo, la
+# versión mostrada en /info), no hace falta reconstruir la imagen
+# ni tocar el Deployment: solo se edita este archivo.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-app-config
+  namespace: demo-app
+data:
+  APP_VERSION: "1.0.0"
+  FLASK_ENV: "production"
