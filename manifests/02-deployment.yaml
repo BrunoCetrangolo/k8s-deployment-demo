@@ -1,0 +1,66 @@
+# Deployment: define CÓMO se corre la app (cuántas réplicas,
+# qué imagen, límites de recursos, y cómo Kubernetes sabe si
+# el contenedor está sano).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: demo-app
+  labels:
+    app: demo-app
+spec:
+  replicas: 2   # dos réplicas: si un pod se cae, el otro sigue
+                # respondiendo mientras Kubernetes levanta uno nuevo
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+    spec:
+      containers:
+        - name: demo-app
+          image: demo-app:multi-stage
+          imagePullPolicy: Never   # la imagen se construye local
+                                    # con minikube (ver README)
+          ports:
+            - containerPort: 5000
+
+          # Variables de entorno tomadas del ConfigMap: la app no
+          # tiene nada hardcodeado, así el mismo Deployment sirve
+          # para distintos ambientes solo cambiando el ConfigMap.
+          envFrom:
+            - configMapRef:
+                name: demo-app-config
+
+          # Límites de recursos: sin esto, un pod con un bug (fuga
+          # de memoria, loop infinito) podría consumir todos los
+          # recursos del nodo y afectar a otras apps del cluster.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+
+          # Liveness probe: si falla varias veces seguidas,
+          # Kubernetes mata el pod y lo reinicia. Sirve para
+          # recuperarse de un proceso que quedó "colgado".
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # Readiness probe: si falla, el pod se saca de la lista
+          # de endpoints del Service (no recibe tráfico) hasta que
+          # vuelva a responder bien. No lo reinicia, solo lo pausa.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 3
+            periodSeconds: 5
