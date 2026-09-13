@@ -1,0 +1,18 @@
+# Service: le da una dirección estable a los pods del Deployment.
+# Los pods se crean y destruyen todo el tiempo (con IPs que cambian);
+# el Service es el punto fijo al que otros servicios (o vos, desde
+# afuera) se conectan sin preocuparse de esos cambios.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app-service
+  namespace: demo-app
+spec:
+  type: NodePort   # expone el servicio en un puerto del nodo,
+                    # útil para probarlo localmente con minikube
+  selector:
+    app: demo-app   # enruta tráfico a cualquier pod con esta label
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30080
